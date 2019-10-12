@@ -20,8 +20,3 @@ example:
 To save it to a file:
 
 `python getReference.py Escherichia 5 > ref.fa`
-
-## TODO (not worth the time probably)
-
-* show a list of possible bacteria with choice maybe
-* allow multiple moves
