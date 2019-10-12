@@ -1,1 +1,1 @@
-# Bacterial Dark Matter S9 project
+# Improving Oxford Nanopore Technologies (ONT) MinION base calling S9 project
