@@ -223,42 +223,10 @@ label_length = Input(name='label_length', shape=(1), dtype='int64')
 
 loss_out = Lambda(ctc_lambda_func, output_shape=(1,), name='ctc')([y_pred, labels, input_length, label_length])
 
-model = Model(inputs=[input_data, labels, input_length, label_length], outputs=loss_out, name="chiron")
-model.compile(loss={'ctc': lambda y_true, y_pred: y_pred}, optimizer='adam')
+model = Model(inputs=[input_data], outputs=y_pred, name="chiron")
+
+model.load_weights("models/e00538_dis478.h5")
 
 
-class SaveCB(Callback):
-    def __init__(self, model_output_dir, test_func, prepper):
-        self.model_output_dir=model_output_dir
-        self.test_func = test_func
-        self.prepper = prepper
-        self.best_dist = None
-
-    def calculate_loss(self, X, y, testbatchsize=1000):
-        editdis = 0
-        for b in range(0, len(X), testbatchsize):
-            predicted = decode_batch(self.test_func, X[b:b+testbatchsize])
-            mtest_y = ["".join(list(map(lambda x: labelBaseMap[x], ty))) for ty in y[b:b+testbatchsize]]
-            for (p,l) in zip(predicted, mtest_y):
-                editdis += editdistance.eval(p,l)
-        return editdis/len(y)
-
-    def on_epoch_end(self, epoch, logs={}):
-        test_X, test_y = next(self.prepper.test_gen())
-        train_X, train_y = self.prepper.last_train_gen_data[0]['the_input'], self.prepper.last_train_gen_data[0]['unpadded_labels']
-
-        testloss = self.calculate_loss(train_X, train_y)
-        print(f"\nAverage test edit distance is: {testloss}")
-        valloss = self.calculate_loss(test_X, test_y)
-        print(f"\nAverage validation edit distance is: {valloss}")
-
-        if self.best_dist is None or valloss < self.best_dist:
-            self.best_dist = valloss
-            self.model.save_weights(os.path.join(self.model_output_dir, f'{e{epoch:05d}_dis{round(valloss*100)}.h5'))
-
-save_cb = SaveCB("models", tf.keras.backend.function([input_data], [y_pred]), prepData)
-
-for idx in range(prepData.get_len()):
-    print(f"Epoch {idx}/{prepData.get_len()}")
-    a = next(prepData.train_gen())
-    model.fit(a[0], a[1], initial_epoch=idx, epochs=idx+1, callbacks=[save_cb]) 
+d = next(prepData.train_gen())[0]['the_input'][:100]
+model.predict(d)
